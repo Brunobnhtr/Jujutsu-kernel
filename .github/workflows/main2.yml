@@ -75,7 +75,7 @@ jobs:
 
           echo "=== Enabling loadable module support (surgical edit of resolved .config) ==="
           chmod u+x scripts/config
-          ./scripts/config --file out/.config --enable MODULES --enable MODULE_UNLOAD --enable MODULE_FORCE_UNLOAD --enable MODULE_FORCE_LOAD --enable MODVERSIONS --disable MODULE_SIG --enable ARM64_MODULE_PLTS --disable RANDOMIZE_BASE --disable RELOCATABLE --disable MEMCG --disable PSI --enable ANDROID_SIMPLE_LMK
+          ./scripts/config --file out/.config --enable MODULES --enable MODULE_UNLOAD --enable MODULE_FORCE_UNLOAD --enable MODULE_FORCE_LOAD --enable MODVERSIONS --disable MODULE_SIG --enable ARM64_MODULE_PLTS
 
           make O=out ARCH=${ARCH} olddefconfig
 
