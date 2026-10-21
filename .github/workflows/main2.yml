@@ -57,6 +57,8 @@ jobs:
 
       - name: Build kernel
         run: |
+          set -o pipefail
+
           export PATH="/tmp/clang/bin:/tmp/gcc-aarch64/bin:/tmp/gcc-arm/bin:${PATH}"
 
           export ARCH=${KERNEL_ARCH}
@@ -67,7 +69,17 @@ jobs:
 
           make O=out ARCH=${ARCH} ${KERNEL_DEFCONFIG}
 
-          echo "Building Jujutsu Kernel with KernelSU-Next..."
+          echo "=== Enabling loadable module support (surgical edit of resolved .config) ==="
+          chmod u+x scripts/config
+          ./scripts/config --file out/.config --enable MODULES --enable MODULE_UNLOAD --enable MODULE_FORCE_UNLOAD --enable MODULE_FORCE_LOAD --enable MODVERSIONS --disable MODULE_SIG --enable ARM64_MODULE_PLTS --disable RANDOMIZE_BASE --disable RELOCATABLE --disable MEMCG --disable PSI --enable ANDROID_SIMPLE_LMK
+
+          make O=out ARCH=${ARCH} olddefconfig
+
+          echo "=== Effective config (modules / kaslr / lmk) ==="
+          grep -E 'CONFIG_MODULES|CONFIG_MODULE_|CONFIG_MODVERSIONS|ARM64_MODULE_PLTS|RANDOMIZE_BASE|RELOCATABLE|CONFIG_MEMCG|CONFIG_PSI|SIMPLE_LMK' out/.config || true
+          echo "=============================================="
+
+          echo "Building Jujutsu Kernel..."
           make -j$(nproc) \
             O=out \
             ARCH=${ARCH} \
@@ -85,15 +97,15 @@ jobs:
 
           if [ -f "../out/arch/${KERNEL_ARCH}/boot/Image.gz-dtb" ]; then
             cp ../out/arch/${KERNEL_ARCH}/boot/Image.gz-dtb Image.gz-dtb
-            echo "✓ Copied Image.gz-dtb"
+            echo "Copied Image.gz-dtb"
           elif [ -f "../out/arch/${KERNEL_ARCH}/boot/Image.gz" ]; then
             cp ../out/arch/${KERNEL_ARCH}/boot/Image.gz Image.gz
-            echo "✓ Copied Image.gz"
+            echo "Copied Image.gz"
           elif [ -f "../out/arch/${KERNEL_ARCH}/boot/Image" ]; then
             cp ../out/arch/${KERNEL_ARCH}/boot/Image Image
-            echo "✓ Copied Image"
+            echo "Copied Image"
           else
-            echo "✗ No kernel image found!"
+            echo "No kernel image found!"
             ls -lah ../out/arch/${KERNEL_ARCH}/boot/
             exit 1
           fi
